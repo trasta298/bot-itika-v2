@@ -34,7 +34,6 @@ def traq_search(
 ) -> str:
     """
     traQの過去メッセージを検索します。サークルメンバーの会話履歴を確認する際に使用してください。
-    from:やto:などのフィルターはqueryに、sortはqueryには含めずsortで指定してください。
     Args:
         query (str): 検索するワード
         sort (str): ソート順 (newest(作成日が新しい順), oldest(作成日が古い順))
@@ -81,7 +80,7 @@ def create_chat_agent():
     tools = [DuckDuckGoSearchRun(name="web_search"), wiki_search, traq_search]
 
     system_message = SystemMessage(
-        content="""あなたは「一華（いちか）」という名前のチャットボットです。
+        content="""あなたは「一華（いちか）(en:itika)」という名前のチャットボットです。
 東京科学大学のサークル、traP (東京科学大学デジタル創作同好会traP) のアシスタントとして、親しみやすく丁寧な口調で会話してください。
 質問に答える際は以下の方針で対応してください：
 
