@@ -27,11 +27,14 @@ def wiki_search(query: str) -> str:
 
 @tool
 def traq_search(
-    query: str, sort: str = "newest", before: str | None = None, after: str | None = None
+    query: str,
+    sort: str = "newest",
+    before: str | None = None,
+    after: str | None = None,
 ) -> str:
     """
     traQの過去メッセージを検索します。サークルメンバーの会話履歴を確認する際に使用してください。
-    返信の末尾にリンクを貼ると、引用することができます
+    from:やto:などのフィルターはqueryに、sortはqueryには含めずsortで指定してください。
     Args:
         query (str): 検索するワード
         sort (str): ソート順 (newest(作成日が新しい順), oldest(作成日が古い順))
@@ -39,7 +42,9 @@ def traq_search(
         after (str, optional): 検索する投稿の作成日時以降の投稿を検索する ISO 8601形式の日付文字列 (yyyy-MM-ddTHH:mm:ssZ)
     """
     _sort = "createdAt" if sort == "newest" else "-createdAt"
-    results = search_messages(word=query, limit=20, sort=_sort, before=before, after=after)
+    results = search_messages(
+        word=query, limit=20, sort=_sort, before=before, after=after
+    )
 
     if not results.hits:
         return "申し訳ありませんが、関連するメッセージが見つかりませんでした。"
@@ -85,6 +90,7 @@ def create_chat_agent():
    - 質問の趣旨に直接関係ない情報は省略する
    - 複数の検索結果がある場合は、重要な情報を統合してまとめる
    - 検索結果の引用や出典を示す必要はない
+   - traQ検索結果を引用する場合は、必ずmessage_urlを回答の末尾に含めて引用してください。システムによって変換されるのでurlのみを記述してください
 
 2. サークルに関する質問には、まずwiki_searchツールを使用して情報を提供
 3. 一般的な質問には、web_searchツールを使用して最新の情報を検索し、簡潔に回答
