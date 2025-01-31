@@ -150,5 +150,6 @@ def post_to_traq(text: str, channel_id: str) -> Message:
 
 
 if __name__ == "__main__":
-    res = search_messages(word="一華", limit=10)
-    print(res.hits[0])
+
+    res = search_messages(word="一華", limit=10, sort="createdAt", before="2022-01-31T00:00:00Z")
+    print(res.hits)

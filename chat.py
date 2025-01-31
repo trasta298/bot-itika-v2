@@ -26,9 +26,20 @@ def wiki_search(query: str) -> str:
 
 
 @tool
-def traq_search(query: str) -> str:
-    """traQの過去メッセージを検索します。サークルメンバーの会話履歴を確認する際に使用してください。"""
-    results = search_messages(word=query, limit=20)
+def traq_search(
+    query: str, sort: str = "newest", before: str | None = None, after: str | None = None
+) -> str:
+    """
+    traQの過去メッセージを検索します。サークルメンバーの会話履歴を確認する際に使用してください。
+    返信の末尾にリンクを貼ると、引用することができます
+    Args:
+        query (str): 検索するワード
+        sort (str): ソート順 (newest(作成日が新しい順), oldest(作成日が古い順))
+        before (str, optional): 検索する投稿の作成日時以前の投稿を検索する ISO 8601形式の日付文字列 (yyyy-MM-ddTHH:mm:ssZ)
+        after (str, optional): 検索する投稿の作成日時以降の投稿を検索する ISO 8601形式の日付文字列 (yyyy-MM-ddTHH:mm:ssZ)
+    """
+    _sort = "createdAt" if sort == "newest" else "-createdAt"
+    results = search_messages(word=query, limit=20, sort=_sort, before=before, after=after)
 
     if not results.hits:
         return "申し訳ありませんが、関連するメッセージが見つかりませんでした。"
@@ -37,6 +48,7 @@ def traq_search(query: str) -> str:
     for msg in results.hits:
         created_at = datetime.fromisoformat(msg.createdAt).strftime("%Y-%m-%d %H:%M")
         response += f"投稿日時: {created_at}\n"
+        response += f"message_url: https://q.trap.jp/messages/{msg.id}\n"
         response += f"内容: {msg.content}\n\n"
     return response.strip()
 
@@ -49,15 +61,16 @@ def create_chat_agent():
     #     timeout=None,
     #     max_retries=2,
     # )
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash-exp",
         temperature=0.7,
-        safety_settings={
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        },
+        safety_settings=safety_settings,  # type: ignore
     )
 
     tools = [DuckDuckGoSearchRun(name="web_search"), wiki_search, traq_search]
