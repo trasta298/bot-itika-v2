@@ -11,4 +11,5 @@ dependencies = [
     "duckduckgo-search>=7.3.0",
     "langchain-openai>=0.3.3",
     "langgraph>=0.2.69",
+    "langchain-google-genai>=2.0.9",
 ]

@@ -1,7 +1,9 @@
-from langchain_deepseek import ChatDeepSeek
+# from langchain_deepseek import ChatDeepSeek
+from langchain_google_genai import ChatGoogleGenerativeAI
+from google.generativeai.types.safety_types import HarmBlockThreshold, HarmCategory
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.messages import SystemMessage
-from get_message import search_messages
+from traq_api import search_messages
 from get_wiki import search_wiki
 from langchain.tools import tool
 from langgraph.prebuilt import create_react_agent
@@ -40,12 +42,22 @@ def traq_search(query: str) -> str:
 
 
 def create_chat_agent():
-    llm = ChatDeepSeek(
-        model="deepseek-chat",
+    # llm = ChatDeepSeek(
+    #     model="deepseek-chat",
+    #     temperature=0.7,
+    #     max_tokens=None,
+    #     timeout=None,
+    #     max_retries=2,
+    # )
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash-exp",
         temperature=0.7,
-        max_tokens=None,
-        timeout=None,
-        max_retries=2,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        },
     )
 
     tools = [DuckDuckGoSearchRun(name="web_search"), wiki_search, traq_search]
@@ -55,13 +67,21 @@ def create_chat_agent():
 東京科学大学のサークル、traP (東京科学大学デジタル創作同好会traP) のアシスタントとして、親しみやすく丁寧な口調で会話してください。
 質問に答える際は以下の方針で対応してください：
 
-1. サークルに関する質問には、wiki_searchツールを使用して正確な情報を提供。ただし、情報は要点を簡潔にまとめること
-2. 一般的な質問には、web_searchツールを使用して最新の情報を検索し、簡潔に回答
-3. 会話は友好的かつ礼儀正しく、絵文字も適度に使用して親しみやすい雰囲気を作る
-4. 専門的な内容は分かりやすく説明し、必要に応じて簡単な例を挙げる
-5. 不適切な発言や質問には丁寧に注意する
-6. 会話の文脈を理解し、以前の会話内容を適切に参照する
-7. 回答は常に簡潔を心がけ、冗長な説明は避ける"""
+1. 情報検索ツール（wiki_search、web_search、traq_search）を使用する際は、以下の点に注意してください：
+   - 検索結果をそのまま表示せず、質問に関連する情報のみを抽出して要約する
+   - 質問の趣旨に直接関係ない情報は省略する
+   - 複数の検索結果がある場合は、重要な情報を統合してまとめる
+   - 検索結果の引用や出典を示す必要はない
+
+2. サークルに関する質問には、まずwiki_searchツールを使用して情報を提供
+3. 一般的な質問には、web_searchツールを使用して最新の情報を検索し、簡潔に回答
+4. 会話は友好的かつ礼儀正しく、絵文字も適度に使用して親しみやすい雰囲気を作る
+5. 専門的な内容は分かりやすく説明し、必要に応じて簡単な例を挙げる
+6. 不適切な発言や質問には丁寧に注意する
+7. 会話の文脈を理解し、以前の会話内容を適切に参照する
+8. 回答は常に簡潔を心がけ、冗長な説明は避ける
+9. 質問の回答に必要な情報が不足している場合は、丁寧に追加情報を求める
+10. 情報が見つからない場合は、「申し訳ありませんが、その件については情報を見つけることができませんでした🙇」と謝罪してから、可能であれば代替の提案をする"""
     )
 
     # メモリの初期化
@@ -92,15 +112,19 @@ def get_response(text: str, user_id: str = "default") -> str:
     """
     try:
         # エージェントを実行
-        result = chat_agent.invoke(
+        result = chat_agent.stream(
             {"messages": [("human", text)]},
             config={"configurable": {"thread_id": user_id}},
+            stream_mode="values",
         )
-        return result["messages"][-1].content
+
+        for msg in result:
+            msg["messages"][-1].pretty_print()
+
+        return msg["messages"][-1].content
+
     except Exception:
         import traceback
 
-        error_msg = (
-            f"申し訳ありません。エラーが発生しました：\n{traceback.format_exc()}"
-        )
+        error_msg = f"申し訳ありません。エラーが発生しました：\n```\n{traceback.format_exc()}\n```"
         return error_msg

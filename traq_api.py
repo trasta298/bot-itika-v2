@@ -28,6 +28,12 @@ class Message:
     stamps: List[MessageStamp]
     threadId: str | None
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        data = data.copy()
+        data["stamps"] = [MessageStamp(**stamp) for stamp in data["stamps"]]
+        return cls(**data)
+
 
 @dataclass
 class MessageSearchResult:
@@ -117,6 +123,30 @@ def search_messages(
     r.raise_for_status()
 
     return MessageSearchResult.from_dict(r.json())
+
+
+def edit_traq_message(text: str, message_id: str) -> None:
+    url: str = f"https://q.trap.jp/api/v3/messages/{message_id}"
+    data: dict = {"content": text, "embed": True}
+    headers: dict = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {BOT_ACCESS_TOKEN}",
+    }
+    r = httpx.put(url, json=data, headers=headers)
+    r.raise_for_status()
+
+
+def post_to_traq(text: str, channel_id: str) -> Message:
+    url: str = f"https://q.trap.jp/api/v3/channels/{channel_id}/messages"
+    data: dict = {"content": text, "embed": True}
+    headers: dict = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {BOT_ACCESS_TOKEN}",
+    }
+    r = httpx.post(url, json=data, headers=headers)
+    r.raise_for_status()
+    j = r.json()
+    return Message.from_dict(j)
 
 
 if __name__ == "__main__":

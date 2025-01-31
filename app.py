@@ -4,25 +4,14 @@ import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Final, Optional
 
-import httpx
 from chat import get_response
+from traq_api import post_to_traq
 
 BOT_ACCESS_TOKEN: Final[str] = os.environ["BOT_ACCESS_TOKEN"]
 
 
 def is_token_valid(token: Optional[str]) -> bool:
     return token == os.environ.get("BOT_VERIFICATION_TOKEN")
-
-
-def post_to_traq(text: str, channel_id: str) -> None:
-    url: str = f"https://q.trap.jp/api/v3/channels/{channel_id}/messages"
-    data: dict = {"content": text, "embed": True}
-    headers: dict = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {BOT_ACCESS_TOKEN}",
-    }
-    r = httpx.post(url, json=data, headers=headers)
-    r.raise_for_status()
 
 
 class BotHandler(BaseHTTPRequestHandler):

@@ -16,6 +16,7 @@ class Creator:
     name: str
     username: str
     v: int = field(metadata={"name": "__v"})
+    image: str = field(default="")
 
     @classmethod
     def from_dict(cls, data: dict):
